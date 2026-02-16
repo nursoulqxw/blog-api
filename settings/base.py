@@ -14,6 +14,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    # "djangorestframework-simplejwt",
 
     "apps.users",
     "apps.blog",
@@ -62,3 +63,81 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.AllowAny",
+        # 'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    "register": "5/min",
+    "token": "10/min",
+    "post_create": "20/min",
+}
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    "register": "5/min",
+    "token": "10/min",
+    "post_create": "20/min",
+}
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "simple": {
+            "format": "%(levelname)s %(message)s",
+        },
+        "verbose":{
+            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(message)s"
+        },
+    },
+
+    "handlers":{
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["require_debug_true"],
+            "formatter": "simple",
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "WARNING",
+            "formatter": "verbose",
+            'filename': 'logs/app.log',
+            "maxBytes": 5 * 1024 * 1024,  # 5 MB
+            "backupCount": 3,
+        },
+    },
+
+    "loggers":{
+        "users": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "blog": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "KEY_PREFIX": "blogapi",
+    }
+}
