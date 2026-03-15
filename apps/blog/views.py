@@ -5,11 +5,14 @@ from urllib.parse import urlencode
 from django.core.cache import cache
 from django.db.models import QuerySet
 from django_redis import get_redis_connection
+
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
 from .models import Post, Comment
 from .permissions import IsOwnerOrReadOnly
@@ -30,7 +33,6 @@ class PostViewSet(ModelViewSet):
         return []
 
     def get_queryset(self) -> QuerySet:
-        # Anyone can read only published posts
         if self.request.method in ("GET", "HEAD", "OPTIONS"):
             return Post.objects.filter(status=Post.Status.PUBLISHED)
         return Post.objects.all()
@@ -41,8 +43,34 @@ class PostViewSet(ModelViewSet):
         except ValueError:
             cache.set("posts:list:version", 2, None)
 
+    @extend_schema(
+        tags=["Posts"],
+        summary="List posts",
+        description="""
+        Return a list of published blog posts.
+
+        **Caching:**
+        - response is cached for a short time
+        - cache is invalidated when posts are created, updated, or deleted
+        """,
+        responses={
+            200: PostSerializer(many=True),
+        },
+        examples=[
+            OpenApiExample(
+                "Posts list response",
+                value=[
+                    {
+                        "title": "First post",
+                        "slug": "first-post",
+                        "status": "published",
+                    }
+                ],
+                response_only=True,
+            )
+        ],
+    )
     def list(self, request, *args, **kwargs):
-        # Manual cache (instead of cache_page) because we need explicit invalidation on create/update.
         version = cache.get("posts:list:version")
         if version is None:
             cache.set("posts:list:version", 1, None)
@@ -64,6 +92,97 @@ class PostViewSet(ModelViewSet):
             cache.set(cache_key, response.data, 60)
 
         return response
+
+    @extend_schema(
+        tags=["Posts"],
+        summary="Create post",
+        description="""
+        Create a new blog post.
+
+        **Authorization required:** Bearer token
+
+        **Rate limit:**
+        - limited per authenticated user
+        """,
+        request=PostSerializer,
+        responses={
+            201: PostSerializer,
+            400: OpenApiResponse(description="Invalid input data"),
+            401: OpenApiResponse(description="Unauthorized"),
+            429: OpenApiResponse(description="Too many requests"),
+        },
+        examples=[
+            OpenApiExample(
+                "Create post request",
+                value={
+                    "title": "My first post",
+                    "slug": "my-first-post",
+                    "content": "Hello world",
+                    "status": "draft",
+                },
+            )
+        ],
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        tags=["Posts"],
+        summary="Retrieve post",
+        description="Return a single post by slug.",
+        responses={
+            200: PostSerializer,
+            404: OpenApiResponse(description="Post not found"),
+        },
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        tags=["Posts"],
+        summary="Update post",
+        description="Update a post completely.",
+        request=PostSerializer,
+        responses={
+            200: PostSerializer,
+            400: OpenApiResponse(description="Invalid input data"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            404: OpenApiResponse(description="Post not found"),
+        },
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        tags=["Posts"],
+        summary="Partially update post",
+        description="Update selected fields of a post.",
+        request=PostSerializer,
+        responses={
+            200: PostSerializer,
+            400: OpenApiResponse(description="Invalid input data"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            404: OpenApiResponse(description="Post not found"),
+        },
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        tags=["Posts"],
+        summary="Delete post",
+        description="Delete a post.",
+        responses={
+            204: OpenApiResponse(description="Post deleted successfully"),
+            401: OpenApiResponse(description="Unauthorized"),
+            403: OpenApiResponse(description="Forbidden"),
+            404: OpenApiResponse(description="Post not found"),
+        },
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         logger.info("Post create attempt by user_id=%s", self.request.user.id)
@@ -104,6 +223,41 @@ class PostViewSet(ModelViewSet):
             instance.slug,
         )
 
+    @extend_schema(
+        tags=["Comments"],
+        summary="List or create comments",
+        description="""
+        GET returns comments for a post.
+        POST creates a new comment for a post.
+
+        **Authorization required for POST**
+        """,
+        request=CommentSerializer,
+        responses={
+            200: CommentSerializer(many=True),
+            201: CommentSerializer,
+            400: OpenApiResponse(description="Invalid input data"),
+            401: OpenApiResponse(description="Unauthorized"),
+            404: OpenApiResponse(description="Post not found"),
+        },
+        examples=[
+            OpenApiExample(
+                "Create comment request",
+                value={
+                    "body": "Nice post!"
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Create comment response",
+                value={
+                    "id": 1,
+                    "body": "Nice post!",
+                },
+                response_only=True,
+            ),
+        ],
+    )
     @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, slug=None):
         post = self.get_object()
@@ -122,12 +276,12 @@ class PostViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(author=request.user, post=post)
 
-        # REDIS PUB/SUB (publish event on comment creation)
         redis_conn = get_redis_connection("default")
         event = {
             "comment_id": serializer.instance.id,
             "post_slug": post.slug,
             "author_id": request.user.id,
+            "body": serializer.instance.body,
             "created_at": serializer.instance.created_at.isoformat(),
         }
         redis_conn.publish("comments", json.dumps(event))

@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,7 +16,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    # "djangorestframework-simplejwt",
+    "drf_spectacular",
 
     "apps.users",
     "apps.blog",
@@ -25,6 +27,7 @@ AUTH_USER_MODEL = "users.User"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -53,15 +56,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "settings.wsgi.application"
 ASGI_APPLICATION = "settings.asgi.application"
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_TZ = True
-
-STATIC_URL = "static/"
-MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -70,35 +64,33 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
-        # 'rest_framework.permissions.IsAuthenticated',
     ),
-}
-REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
-    "register": "5/min",
-    "token": "10/min",
-    "post_create": "20/min",
-}
-REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
-    "register": "5/min",
-    "token": "10/min",
-    "post_create": "20/min",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_RATES": {
+        "register": "5/min",
+        "token": "10/min",
+        "post_create": "20/min",
+    },
 }
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Blog API",
+    "DESCRIPTION": "Blog API documentation",
+    "VERSION": "1.0.0",
+}
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-
     "formatters": {
         "simple": {
             "format": "%(levelname)s %(message)s",
         },
-        "verbose":{
+        "verbose": {
             "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(message)s"
         },
     },
-
-    "handlers":{
+    "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "filters": ["require_debug_true"],
@@ -108,13 +100,12 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "WARNING",
             "formatter": "verbose",
-            'filename': 'logs/app.log',
-            "maxBytes": 5 * 1024 * 1024,  # 5 MB
+            "filename": "logs/app.log",
+            "maxBytes": 5 * 1024 * 1024,
             "backupCount": 3,
         },
     },
-
-    "loggers":{
+    "loggers": {
         "users": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
@@ -137,7 +128,33 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+        },
         "KEY_PREFIX": "blogapi",
     }
 }
+
+# Internationalization
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+ENGLISH_LANGUAGE_CODE = "en"
+
+LANGUAGES = [
+    ("en", "English"),
+    ("kk", "Kazakh"),
+    ("ru", "Russian"),
+]
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, "locale"),
+]
+
+# Static | Media
+STATIC_URL = "static/"
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"

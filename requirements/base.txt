@@ -5,3 +5,4 @@ Pillow>=10.0
 djangorestframework-simplejwt
 django-redis
 redis
+drf-spectacular

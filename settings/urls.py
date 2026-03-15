@@ -3,6 +3,11 @@ from django.urls import path, include
 
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 from apps.users.views import RegisterViewSet
 from apps.blog.views import PostViewSet
@@ -16,8 +21,11 @@ router.register(r"posts", PostViewSet, basename="posts")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("i18n/", include("django.conf.urls.i18n")),
+    
 
     # JWT
+    
     path(
         "api/auth/token/",
         LoggingTokenObtainPairView.as_view(),

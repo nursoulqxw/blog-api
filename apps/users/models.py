@@ -1,16 +1,12 @@
-# Python modules
-
-# Django modules
 from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+import pytz
 
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.core.mail import send_mail
-from django.utils.translation import gettext_lazy as _
 
-
-
-# Create your models here.
 
 class CustomManager(BaseUserManager):
     use_in_migrations = True
@@ -43,42 +39,55 @@ class CustomManager(BaseUserManager):
         return self.create_user(email=email, password=password, **extra_fields)
 
 
-
 class User(AbstractBaseUser, PermissionsMixin):
+    LANGUAGE_CHOICES = [
+        ("en", _("English")),
+        ("ru", _("Russian")),
+        ("kk", _("Kazakh")),
+    ]
+
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(auto_now_add=True)
-    avatar = models.ImageField(upload_to="avatars/", blank = True, null = True)
+    date_joined = models.DateTimeField(default=timezone.now)
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+
+    preferred_language = models.CharField(
+        max_length=2,
+        choices=LANGUAGE_CHOICES,
+        default="en",
+        verbose_name=_("Preferred language"),
+        help_text=_("User's preferred language"),
+    )
+
+    timezone = models.CharField(
+        max_length=64,
+        default="UTC",
+        verbose_name=_("Timezone"),
+        help_text=_("User's timezone"),
+    )
 
     REQUIRED_FIELDS = ["first_name", "last_name"]
     USERNAME_FIELD = "email"
-    
-    
+
     objects = CustomManager()
 
     class Meta:
         verbose_name = _("user")
         verbose_name_plural = _("users")
-        abstract = False
 
     def clean(self):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
     def get_full_name(self):
-        """
-        Return the first_name plus the last_name, with a space in between.
-        """
         full_name = "%s %s" % (self.first_name, self.last_name)
         return full_name.strip()
 
     def get_short_name(self):
-        """Return the short name for the user."""
         return self.first_name
 
     def email_user(self, subject, message, from_email=None, **kwargs):
-        """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
