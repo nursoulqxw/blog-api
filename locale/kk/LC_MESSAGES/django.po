@@ -20,31 +20,31 @@ msgstr ""
 
 #: apps/users/models.py:46
 msgid "English"
-msgstr ""
+msgstr "Ағылшын"
 
 #: apps/users/models.py:47
 msgid "Russian"
-msgstr ""
+msgstr "Орыс"
 
 #: apps/users/models.py:48
 msgid "Kazakh"
-msgstr ""
+msgstr "Қазақ"
 
 #: apps/users/models.py:63
 msgid "Preferred language"
-msgstr ""
+msgstr "Таңдаулы тіл"
 
 #: apps/users/models.py:64
 msgid "User's preferred language"
-msgstr ""
+msgstr "Пайдаланушының таңдаулы тілі"
 
 #: apps/users/models.py:70
 msgid "Timezone"
-msgstr ""
+msgstr "Уақыт белдеуі"
 
 #: apps/users/models.py:71
 msgid "User's timezone"
-msgstr ""
+msgstr "Пайдаланушының уақыт белдеуі"
 
 #: apps/users/models.py:80
 msgid "user"
@@ -66,6 +66,26 @@ msgstr "Бұл email-мен пайдаланушы бұрыннан бар."
 #: apps/users/serializers.py:101
 msgid "Passwords do not match."
 msgstr "Құпиясөздер сәйкес келмейді."
+
+#: apps/users/validators.py
+msgid "Unsupported language."
+msgstr "Қолданылмайтын тіл."
+
+#: apps/users/validators.py
+msgid "Invalid timezone."
+msgstr "Жарамсыз уақыт белдеуі."
+
+#: apps/users/views.py
+msgid "User registered successfully."
+msgstr "Пайдаланушы сәтті тіркелді."
+
+#: apps/users/views.py
+msgid "Language successfully updated."
+msgstr "Тіл сәтті жаңартылды."
+
+#: apps/users/views.py
+msgid "Timezone successfully updated."
+msgstr "Уақыт белдеуі сәтті жаңартылды."
 
 #: venv/lib/python3.12/site-packages/django/contrib/messages/apps.py:16
 msgid "Messages"

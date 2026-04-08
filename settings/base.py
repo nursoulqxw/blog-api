@@ -2,12 +2,22 @@ import os
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
+from settings.conf import (
+    BLOG_SECRET_KEY,
+    BLOG_ALLOWED_HOSTS,
+    BLOG_REDIS_URL,
+    SIMPLE_JWT_SETTINGS,
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "dev-secret"
-ALLOWED_HOSTS = []
+SECRET_KEY = BLOG_SECRET_KEY
+ALLOWED_HOSTS = BLOG_ALLOWED_HOSTS
 
+# modeltranslation must appear before django.contrib.admin
 INSTALLED_APPS = [
+    "modeltranslation",
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -18,6 +28,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
 
+    "apps.core",
     "apps.users",
     "apps.blog",
 ]
@@ -27,6 +38,9 @@ AUTH_USER_MODEL = "users.User"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # LanguageTimezoneMiddleware comes before LocaleMiddleware so the
+    # language is activated before Django's locale processing.
+    "apps.core.middleware.LanguageTimezoneMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -40,7 +54,7 @@ ROOT_URLCONF = "settings.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -71,6 +85,7 @@ REST_FRAMEWORK = {
         "token": "10/min",
         "post_create": "20/min",
     },
+    "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
@@ -79,21 +94,28 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
 }
 
+SIMPLE_JWT = SIMPLE_JWT_SETTINGS
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
     "formatters": {
         "simple": {
             "format": "%(levelname)s %(message)s",
         },
         "verbose": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(message)s"
+            "format": "%(asctime)s %(levelname)s %(name)s %(module)s %(message)s",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "filters": ["require_debug_true"],
+            "level": "DEBUG",
             "formatter": "simple",
         },
         "file": {
@@ -116,6 +138,11 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": False,
         },
+        "core": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         "django.request": {
             "handlers": ["file"],
             "level": "WARNING",
@@ -127,16 +154,20 @@ LOGGING = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": BLOG_REDIS_URL,
         "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
         "KEY_PREFIX": "blogapi",
     }
 }
 
+# Email — overridden per environment
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+DEFAULT_FROM_EMAIL = "Blog API <noreply@blogapi.local>"
+
 # Internationalization
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_L10N = True
@@ -145,9 +176,9 @@ USE_TZ = True
 ENGLISH_LANGUAGE_CODE = "en"
 
 LANGUAGES = [
-    ("en", "English"),
-    ("kk", "Kazakh"),
-    ("ru", "Russian"),
+    ("en", _("English")),
+    ("kk", _("Kazakh")),
+    ("ru", _("Russian")),
 ]
 
 LOCALE_PATHS = [

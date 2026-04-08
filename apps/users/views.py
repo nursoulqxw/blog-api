@@ -1,5 +1,9 @@
 import logging
+import threading
 
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils import translation
 from django.utils.translation import gettext as _
 
 from rest_framework import status, viewsets
@@ -129,6 +133,15 @@ class RegisterViewSet(viewsets.ViewSet):
         refresh = RefreshToken.for_user(user)
 
         logger.info("User registered: %s", user.email)
+
+        # Send welcome email in the user's chosen language.
+        # Runs in a background thread so the HTTP response is not delayed
+        # by email delivery (console backend is instant, SMTP can be slow).
+        threading.Thread(
+            target=_send_welcome_email,
+            args=(user,),
+            daemon=True,
+        ).start()
 
         return Response(
             {
@@ -303,3 +316,41 @@ class UserPreferencesViewSet(viewsets.ViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _send_welcome_email(user) -> None:
+    """
+    Render and send a welcome email in the *user's* preferred language.
+
+    The language is activated explicitly before rendering so the email
+    language is independent of whatever language is active in the current
+    request thread (a key hw2 requirement).
+    """
+    lang = getattr(user, "preferred_language", "en") or "en"
+
+    with translation.override(lang):
+        subject = render_to_string(
+            "emails/welcome/subject.txt",
+            {"user": user},
+        ).strip()
+
+        body = render_to_string(
+            "emails/welcome/body.txt",
+            {"user": user},
+        )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=None,  # uses DEFAULT_FROM_EMAIL
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        logger.info("Welcome email sent to %s (lang=%s)", user.email, lang)
+    except Exception:
+        logger.exception("Failed to send welcome email to %s", user.email)

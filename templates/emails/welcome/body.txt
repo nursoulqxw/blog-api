@@ -1,0 +1,12 @@
+{% load i18n %}{% blocktrans with name=user.first_name %}Hi {{ name }},
+
+Welcome to Blog API! Your account has been created successfully.
+
+You can now log in with your email address: {{ email }}
+
+Start reading and writing posts at /api/posts/.
+
+Enjoy!
+
+The Blog API Team
+{% endblocktrans %}

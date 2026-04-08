@@ -76,9 +76,13 @@ class PostViewSet(ModelViewSet):
             cache.set("posts:list:version", 1, None)
             version = 1
 
+        # Language-aware cache key: Russian and English users get
+        # independently cached responses so translated category names
+        # and localised dates are served correctly.
+        lang = getattr(request, "LANGUAGE_CODE", "en")
         params = request.query_params.dict()
         params_str = urlencode(sorted(params.items()))
-        cache_key = f"posts:list:v{version}:{params_str}"
+        cache_key = f"posts:list:v{version}:{lang}:{params_str}"
 
         cached = cache.get(cache_key)
         if cached is not None:

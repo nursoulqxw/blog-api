@@ -22,31 +22,31 @@ msgstr ""
 
 #: apps/users/models.py:46
 msgid "English"
-msgstr ""
+msgstr "Английский"
 
 #: apps/users/models.py:47
 msgid "Russian"
-msgstr ""
+msgstr "Русский"
 
 #: apps/users/models.py:48
 msgid "Kazakh"
-msgstr ""
+msgstr "Казахский"
 
 #: apps/users/models.py:63
 msgid "Preferred language"
-msgstr ""
+msgstr "Предпочитаемый язык"
 
 #: apps/users/models.py:64
 msgid "User's preferred language"
-msgstr ""
+msgstr "Предпочитаемый язык пользователя"
 
 #: apps/users/models.py:70
 msgid "Timezone"
-msgstr ""
+msgstr "Часовой пояс"
 
 #: apps/users/models.py:71
 msgid "User's timezone"
-msgstr ""
+msgstr "Часовой пояс пользователя"
 
 #: apps/users/models.py:80
 msgid "user"
@@ -68,6 +68,26 @@ msgstr "Пользователь с таким email уже существует
 #: apps/users/serializers.py:101
 msgid "Passwords do not match."
 msgstr "Пароли не совпадают."
+
+#: apps/users/validators.py
+msgid "Unsupported language."
+msgstr "Неподдерживаемый язык."
+
+#: apps/users/validators.py
+msgid "Invalid timezone."
+msgstr "Неверный часовой пояс."
+
+#: apps/users/views.py
+msgid "User registered successfully."
+msgstr "Пользователь успешно зарегистрирован."
+
+#: apps/users/views.py
+msgid "Language successfully updated."
+msgstr "Язык успешно обновлён."
+
+#: apps/users/views.py
+msgid "Timezone successfully updated."
+msgstr "Часовой пояс успешно обновлён."
 
 #: venv/lib/python3.12/site-packages/django/contrib/messages/apps.py:16
 msgid "Messages"

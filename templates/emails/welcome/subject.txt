@@ -1,0 +1,1 @@
+{% load i18n %}{% blocktrans with name=user.first_name %}Welcome to Blog API, {{ name }}!{% endblocktrans %}
