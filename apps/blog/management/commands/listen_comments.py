@@ -20,10 +20,10 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger("blog")
-
 
 class Command(BaseCommand):
     help = "Subscribe to Redis pub/sub channel 'comments' (async)"

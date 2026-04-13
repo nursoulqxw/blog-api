@@ -1,0 +1,63 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    command: celery -A settings worker -l info
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+  celery_beat:
+    build: .
+    command: celery -A settings beat -l info
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+  flower:
+    build: .
+    command: sh -c "celery -A settings flower --basic-auth=$$BLOG_FLOWER_USER:$$BLOG_FLOWER_PASSWORD"
+    ports:
+      - "5555:5555"
+    env_file:
+      - settings/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:

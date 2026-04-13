@@ -4,6 +4,8 @@ import os
 import sys
 from pathlib import Path
 
+from settings.conf import ALLOWED_ENV_IDS, ENV_ID #adv django
+
 BLOG_ENV_ID = [
     'settings/.env'
 ]
@@ -13,6 +15,9 @@ def read_blog_env_id() -> str:
     env_path = Path(__file__).resolve().parent / "settings" / ".env"
     if not env_path.exists():
         return env_id
+
+
+        
 
     for line in env_path.read_text().splitlines():
         line = line.strip()
@@ -29,6 +34,7 @@ def read_blog_env_id() -> str:
 def main():
     """Run administrative tasks."""
     env_id = read_blog_env_id()
+    assert env_id in ALLOWED_ENV_IDS, f"Invalid ENV_ID: {env_id}. Allowed values are: {ALLOWED_ENV_IDS}"
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', f"settings.env.{env_id}")
     try:
         from django.core.management import execute_from_command_line

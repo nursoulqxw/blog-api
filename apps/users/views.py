@@ -1,9 +1,5 @@
 import logging
-import threading
 
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils import translation
 from django.utils.translation import gettext as _
 
 from rest_framework import status, viewsets
@@ -11,6 +7,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.status import (
+    HTTP_200_OK, 
+    HTTP_201_CREATED, 
+    HTTP_400_BAD_REQUEST, 
+    HTTP_401_UNAUTHORIZED, 
+    HTTP_429_TOO_MANY_REQUESTS, 
+)
 
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
@@ -20,6 +23,7 @@ from .serializers import (
     LanguageSerializer,
     TimezoneSerializer,
 )
+from .tasks import send_welcome_email
 from .throttles import RegisterIPThrottle
 
 
@@ -51,7 +55,7 @@ class RegisterViewSet(viewsets.ViewSet):
         """,
         request=RegisterSerializer,
         responses={
-            201: OpenApiResponse(
+            HTTP_201_CREATED: OpenApiResponse(
                 description="User registered successfully",
                 examples=[
                     OpenApiExample(
@@ -74,7 +78,7 @@ class RegisterViewSet(viewsets.ViewSet):
                     )
                 ],
             ),
-            400: OpenApiResponse(
+            HTTP_400_BAD_REQUEST: OpenApiResponse(
                 description="Invalid input data",
                 examples=[
                     OpenApiExample(
@@ -91,7 +95,7 @@ class RegisterViewSet(viewsets.ViewSet):
                     ),
                 ],
             ),
-            429: OpenApiResponse(
+            HTTP_429_TOO_MANY_REQUESTS: OpenApiResponse(
                 description="Too many requests",
                 examples=[
                     OpenApiExample(
@@ -134,14 +138,9 @@ class RegisterViewSet(viewsets.ViewSet):
 
         logger.info("User registered: %s", user.email)
 
-        # Send welcome email in the user's chosen language.
-        # Runs in a background thread so the HTTP response is not delayed
-        # by email delivery (console backend is instant, SMTP can be slow).
-        threading.Thread(
-            target=_send_welcome_email,
-            args=(user,),
-            daemon=True,
-        ).start()
+        # Dispatch to Celery so the HTTP response is not delayed by email
+        # delivery. The task handles language-aware template rendering.
+        send_welcome_email.delay(user.id)
 
         return Response(
             {
@@ -180,7 +179,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
         """,
         request=LanguageSerializer,
         responses={
-            200: OpenApiResponse(
+            HTTP_200_OK: OpenApiResponse(
                 description="Language updated successfully",
                 examples=[
                     OpenApiExample(
@@ -192,7 +191,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
                     )
                 ],
             ),
-            400: OpenApiResponse(
+            HTTP_400_BAD_REQUEST: OpenApiResponse(
                 description="Invalid language",
                 examples=[
                     OpenApiExample(
@@ -203,7 +202,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
                     )
                 ],
             ),
-            401: OpenApiResponse(description="Unauthorized"),
+            HTTP_401_UNAUTHORIZED: OpenApiResponse(description="Unauthorized"),
         },
         examples=[
             OpenApiExample(
@@ -257,7 +256,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
         """,
         request=TimezoneSerializer,
         responses={
-            200: OpenApiResponse(
+            HTTP_200_OK: OpenApiResponse(
                 description="Timezone updated successfully",
                 examples=[
                     OpenApiExample(
@@ -269,7 +268,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
                     )
                 ],
             ),
-            400: OpenApiResponse(
+            HTTP_400_BAD_REQUEST: OpenApiResponse(
                 description="Invalid timezone",
                 examples=[
                     OpenApiExample(
@@ -280,7 +279,7 @@ class UserPreferencesViewSet(viewsets.ViewSet):
                     )
                 ],
             ),
-            401: OpenApiResponse(description="Unauthorized"),
+            HTTP_401_UNAUTHORIZED: OpenApiResponse(description="Unauthorized"),
         },
         examples=[
             OpenApiExample(
@@ -317,40 +316,3 @@ class UserPreferencesViewSet(viewsets.ViewSet):
             status=status.HTTP_200_OK,
         )
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _send_welcome_email(user) -> None:
-    """
-    Render and send a welcome email in the *user's* preferred language.
-
-    The language is activated explicitly before rendering so the email
-    language is independent of whatever language is active in the current
-    request thread (a key hw2 requirement).
-    """
-    lang = getattr(user, "preferred_language", "en") or "en"
-
-    with translation.override(lang):
-        subject = render_to_string(
-            "emails/welcome/subject.txt",
-            {"user": user},
-        ).strip()
-
-        body = render_to_string(
-            "emails/welcome/body.txt",
-            {"user": user},
-        )
-
-    try:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=None,  # uses DEFAULT_FROM_EMAIL
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
-        logger.info("Welcome email sent to %s (lang=%s)", user.email, lang)
-    except Exception:
-        logger.exception("Failed to send welcome email to %s", user.email)

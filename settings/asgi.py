@@ -1,16 +1,24 @@
-"""
-ASGI config for settings project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
-"""
-
+# ASGI (Asynchronous Server Gateway Interface)
 import os
+import django
+from decouple import config
+
+_env_id = config("BLOG_ENV_ID", default="local")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"settings.env.{_env_id}")
+
+# Must call setup() before importing any app modules (e.g. routing, consumers)
+# to ensure the app registry is ready.
+django.setup()
 
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from apps.notifications import routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings.settings')
+django_asgi_app = get_asgi_application()
 
-application = get_asgi_application()
+application = ProtocolTypeRouter({
+    'http': django_asgi_app,
+    'websocket': URLRouter(
+        routing.websocket_urlpatterns
+    )
+})
