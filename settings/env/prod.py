@@ -1,12 +1,13 @@
+import os
 from settings.base import *
 
 
 DEBUG = False
-ALLOWED_HOSTS = ["yourdomain.com"]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'data', 'db.sqlite3'),
     }
 }
