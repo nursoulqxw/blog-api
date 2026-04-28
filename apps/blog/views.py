@@ -1,7 +1,9 @@
+#Python modules
 import json
 import logging
 from urllib.parse import urlencode
 
+#Django modules
 import redis.asyncio as aioredis
 from django.conf import settings
 from django.core.cache import cache
@@ -10,6 +12,7 @@ from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django_redis import get_redis_connection
 
+#Django REST modules
 from rest_framework import status
 from rest_framework.status import (
     HTTP_200_OK,
@@ -28,6 +31,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
+#Porject modules
 from .models import Post, Comment
 from .permissions import IsOwnerOrReadOnly
 from .serializers import PostSerializer, CommentSerializer
@@ -324,7 +328,7 @@ class PostViewSet(ModelViewSet):
                 "id": post.author.id,
                 "email": post.author.email,
             },
-            "published_at": post.updated_at.isoformat(),
+            "published_at": post.published_at.isoformat(),
         })
         redis_conn = get_redis_connection("default")
         redis_conn.publish(_REDIS_PUBSUB_CHANNEL, payload)

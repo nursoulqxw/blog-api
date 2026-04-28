@@ -1,7 +1,8 @@
+#Python modules
 import logging
-
 from django.utils.translation import gettext as _
 
+#Django REST modules
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -14,9 +15,9 @@ from rest_framework.status import (
     HTTP_401_UNAUTHORIZED, 
     HTTP_429_TOO_MANY_REQUESTS, 
 )
-
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 
+#Project modules
 from .serializers import (
     RegisterSerializer,
     UserSerializer,

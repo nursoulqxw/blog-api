@@ -16,6 +16,7 @@ DATABASES = {
 
 # Print emails to console during local development instead of sending them
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = 'noreply@blog-api.com'
 
 # Add debug_requests handler — only active when DEBUG=True via RequireDebugTrue filter
 LOGGING["handlers"]["debug_requests"] = {  # noqa: F405

@@ -16,17 +16,25 @@ event loop switching while awaiting network responses.
 If this were written synchronously every caller would block a
 Django worker thread for t1 + t2 milliseconds, limiting throughput.
 """
+#Python modules
 import asyncio
 import logging
-
 import httpx
+
+#Django modules
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 
+#Django REST modules
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_502_BAD_GATEWAY,
+)
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
+#Project modules
 from .models import Comment, Post
 
 
@@ -54,7 +62,7 @@ CURRENCIES = ("KZT", "RUB", "EUR")
     No authentication required.
     """,
     responses={
-        200: OpenApiResponse(
+        HTTP_200_OK: OpenApiResponse(
             description="Statistics returned successfully",
             examples=[
                 OpenApiExample(
@@ -76,7 +84,7 @@ CURRENCIES = ("KZT", "RUB", "EUR")
                 )
             ],
         ),
-        502: OpenApiResponse(description="External API unavailable"),
+        HTTP_502_BAD_GATEWAY: OpenApiResponse(description="External API unavailable"),
     },
 )
 @api_view(["GET"])

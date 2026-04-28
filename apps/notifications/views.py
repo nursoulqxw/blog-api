@@ -8,11 +8,16 @@
 # Switch to WebSockets when: you need sub-second delivery (chat, live collaboration, games).
 # Switch to SSE when: updates are server->client only and you want lower overhead than WebSockets.
 
+#Django modules
 from django.shortcuts import render
+
+#Django REST modues
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+
+#Project modules
 from .models import Notification
 from .serializers import NotificationSerializer
 
