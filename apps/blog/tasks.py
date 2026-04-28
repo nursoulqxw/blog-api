@@ -35,6 +35,7 @@ def publish_scheduled_posts():
     for post in posts:
         with transaction.atomic():
             post.status = Post.Status.PUBLISHED
+            post.published_at = now 
             post.save()
 
             payload = json.dumps({
@@ -45,7 +46,7 @@ def publish_scheduled_posts():
                     "id": post.author.id,
                     "email": post.author.email,
                 },
-                "published_at": post.updated_at.isoformat(),
+                "published_at": post.published_at.isoformat(),
             })
             redis_conn = get_redis_connection("default")
             redis_conn.publish("posts:published", payload)

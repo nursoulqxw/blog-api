@@ -1,6 +1,8 @@
+#Python modules
 import logging
-
 from celery import shared_task
+
+#Django modules
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import translation

@@ -1,7 +1,10 @@
+#Python modules
 from django.urls import path
 
+#Django REST modules
 from rest_framework_simplejwt.views import TokenRefreshView
 
+#Project modules
 from apps.users.auth_views import LoggingTokenObtainPairView
 from apps.users.views import RegisterViewSet, UserPreferencesViewSet
 

@@ -1,9 +1,14 @@
+#Python modules
 import json
 from urllib.parse import parse_qs
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+
+#Django modules
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+
+#Project modules
 from apps.blog.models import Post
 
 
