@@ -335,7 +335,10 @@ class PostViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         logger.info("Post create attempt by user_id=%s", self.request.user.id)
-        serializer.save(author=self.request.user)
+        extra = {}
+        if serializer.validated_data.get("status") == Post.Status.PUBLISHED:
+            extra["published_at"] = timezone.now()
+        serializer.save(author=self.request.user, **extra)
         invalidate_posts_cache.delay()
         logger.info(
             "Post created by user_id=%s slug=%s",
