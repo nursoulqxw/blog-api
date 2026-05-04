@@ -1,6 +1,10 @@
+#Python modules
 import logging
+
+#Django REST Modules
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
 from .throttles import TokenIPThrottle
 
 
@@ -21,7 +25,7 @@ class LoggingTokenObtainPairView(TokenObtainPairView):
             logger.exception("Login failed for: %s", email)
             raise
 
-        if response.status_code == 200:
+        if response.status_code == HTTP_200_OK:
             logger.info("Login success for: %s", email)
         else:
             logger.warning("Login failed for: %s, status=%s", email, response.status_code)

@@ -1,3 +1,4 @@
+#Django modules
 from django.db.models import (
     ForeignKey,
     BooleanField,
@@ -6,6 +7,7 @@ from django.db.models import (
     Model,
 )
 
+#Project modules
 from apps.blog.models import Comment
 from apps.users.models import User
 

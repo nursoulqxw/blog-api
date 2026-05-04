@@ -1,6 +1,8 @@
+#Python modules
 import pytz
-
 from django.utils.translation import gettext as _
+
+#Django REST modules
 from rest_framework.exceptions import ValidationError
 
 

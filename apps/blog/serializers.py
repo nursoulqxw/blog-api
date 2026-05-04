@@ -1,12 +1,16 @@
+#Python modules
 import logging
-
 import pytz
+
+#Django modules
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext_lazy as _
 
+#Django REST modules
 from rest_framework import serializers
 
+#Project modules
 from .models import Category, Tag, Post, Comment
 
 

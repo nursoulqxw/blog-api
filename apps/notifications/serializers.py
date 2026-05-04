@@ -1,8 +1,10 @@
+#Django REST modules
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
 )
 
+#Project modules
 from .models import Notification
 
 class NotificationSerializer(ModelSerializer):
